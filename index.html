@@ -1,0 +1,424 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#2f5a3e">
+<title>Pre-tag Pickup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:wght@500;600&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<style>
+  :root{
+    --bg:#f6f1e7; --card:#ffffff; --ink:#23332a; --muted:#5d6b60; --line:#e6dfd0;
+    --green:#2f5a3e; --green-soft:#e3ebe2; --rust:#8a3b2e; --rust-soft:#f3e3df;
+    --amber:#a8681f; --amber-soft:#f6e8d3;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif;-webkit-text-size-adjust:100%}
+  body{min-height:100dvh;display:flex;flex-direction:column}
+  button,input{font:inherit;color:inherit}
+  .wrap{width:100%;max-width:480px;margin:0 auto;padding:16px 16px calc(24px + env(safe-area-inset-bottom))}
+  header{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;padding:8px 0 16px}
+  .kick{font-size:12px;letter-spacing:3px;text-transform:uppercase;color:var(--rust);font-weight:600}
+  h1{font-family:Lora,Georgia,serif;font-weight:600;font-size:28px;line-height:1.1;margin-top:4px}
+  .chip{background:var(--card);border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:13px;color:var(--muted);white-space:nowrap}
+  .chip b{color:var(--green);font-size:15px}
+  .stats{display:flex;background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+  .stats div{padding:6px 12px;font-size:11px;color:var(--muted);text-align:center;line-height:1.2;white-space:nowrap}
+  .stats div+div{border-left:1px solid var(--line)}
+  .stats b{display:block;font-family:Lora,Georgia,serif;font-size:22px;color:var(--green)}
+  .demo{background:var(--amber-soft);color:var(--amber);border-radius:10px;padding:8px 12px;font-size:13px;font-weight:500;margin-bottom:12px}
+  .card{background:var(--card);border-radius:18px;padding:18px;border:1px solid var(--line)}
+  label{display:block;font-size:14px;font-weight:600;margin:14px 0 6px}
+  input[type=text],input[type=tel],input[type=password]{width:100%;font-size:20px;padding:14px;border:1.5px solid #cfc6b4;border-radius:12px;background:#fffdf8;outline:none}
+  input:focus{border-color:var(--green)}
+  .btn{display:block;width:100%;border:0;border-radius:14px;padding:16px;font-size:18px;font-weight:600;cursor:pointer;margin-top:16px}
+  .btn-green{background:var(--green);color:#fff}
+  .btn-plain{background:transparent;color:var(--muted);font-weight:500;font-size:16px;margin-top:8px}
+  .btn-big{padding:22px;font-size:22px;border-radius:16px}
+  .btn:disabled{opacity:.6}
+  .err{color:var(--rust);font-size:14px;margin-top:10px;min-height:1em}
+  .hint{color:var(--muted);font-size:14px;line-height:1.4}
+
+  #cam{position:relative;border-radius:18px;overflow:hidden;background:#1d2620;aspect-ratio:4/3}
+  #reader{width:100%;height:100%}
+  #reader video{object-fit:cover;width:100%!important;height:100%!important}
+  #reader img[alt="Info icon"],#reader__dashboard_section_csr span{display:none!important}
+  .aim{position:absolute;left:8%;right:8%;top:32%;bottom:32%;border:3px solid rgba(255,255,255,.9);border-radius:12px;pointer-events:none;box-shadow:0 0 0 999px rgba(0,0,0,.25)}
+  .camtext{position:absolute;inset:auto 0 12px 0;text-align:center;color:#fff;font-size:14px;text-shadow:0 1px 3px rgba(0,0,0,.6);pointer-events:none}
+  .camoff{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:#fff;text-align:center;padding:20px}
+  .camoff .btn{width:auto;padding:12px 22px;margin:0;background:#fff;color:var(--green)}
+  .or{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:13px;margin:18px 0 10px}
+  .or:before,.or:after{content:"";flex:1;height:1px;background:#cfc6b4}
+  .typein{display:flex;gap:8px}
+  .typein input{flex:1}
+  .typein .btn{width:auto;margin:0;padding:0 20px}
+  .foot{display:flex;justify-content:space-between;align-items:center;margin-top:22px;font-size:13px;color:var(--muted)}
+  .foot button{background:none;border:0;color:var(--muted);text-decoration:underline;cursor:pointer}
+
+  /* Result sheet */
+  #sheet{position:fixed;inset:0;background:rgba(35,51,42,.45);display:none;align-items:flex-end;justify-content:center;z-index:10}
+  #sheet.on{display:flex}
+  .panel{width:100%;max-width:480px;background:var(--bg);border-radius:22px 22px 0 0;padding:22px 16px calc(22px + env(safe-area-inset-bottom));animation:up .18s ease-out}
+  @keyframes up{from{transform:translateY(30px);opacity:.4}to{transform:none;opacity:1}}
+  .tag{display:inline-block;font-size:13px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:6px 10px;border-radius:8px}
+  .tag.go{background:var(--green-soft);color:var(--green)}
+  .tag.warn{background:var(--amber-soft);color:var(--amber)}
+  .tag.stop{background:var(--rust-soft);color:var(--rust)}
+  .who{font-family:Lora,Georgia,serif;font-size:30px;font-weight:600;line-height:1.15;margin:12px 0 4px;word-break:break-word}
+  .meta{color:var(--muted);font-size:16px;line-height:1.5}
+  .treebox{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-top:14px;display:flex;justify-content:space-between;align-items:center;gap:12px}
+  .treebox .num{font-family:Lora,Georgia,serif;font-size:24px;font-weight:600;color:var(--green)}
+  .treebox .what{font-size:15px;color:var(--ink);text-align:right;line-height:1.35}
+  .note{background:var(--amber-soft);color:#6b4413;border-radius:12px;padding:12px;margin-top:12px;font-size:15px;line-height:1.4}
+  .check{width:72px;height:72px;border-radius:50%;background:var(--green);display:flex;align-items:center;justify-content:center;margin:4px 0 8px}
+  .spin{width:28px;height:28px;border:3px solid var(--line);border-top-color:var(--green);border-radius:50%;animation:sp 1s linear infinite;margin:30px auto}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  .hidden{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <div class="kick">Prairie Woods</div>
+      <h1>Pre-tag Pickup</h1>
+    </div>
+    <div class="stats hidden" id="todayChip"><div><b id="sold">0</b>sold today</div><div><b id="today">0</b>picked up</div></div>
+  </header>
+  <div class="demo hidden" id="demoNote">Demo mode. Nothing is saved to Shopify. Try 100001, 100002, 100003 or 100004.</div>
+
+  <!-- First-time setup -->
+  <section id="setup" class="card hidden">
+    <div class="hint">One-time setup on this phone.</div>
+    <label for="helper">Your first name</label>
+    <input id="helper" type="text" autocomplete="given-name" placeholder="Lincoln">
+    <label for="pin">Farm PIN</label>
+    <input id="pin" type="password" inputmode="numeric" autocomplete="off" placeholder="4 digits" maxlength="8">
+    <button class="btn btn-green" id="saveSetup">Start scanning</button>
+    <div class="err" id="setupErr"></div>
+  </section>
+
+  <!-- Scanner -->
+  <section id="scan" class="hidden">
+    <div id="cam">
+      <div id="reader"></div>
+      <div class="aim" id="aim"></div>
+      <div class="camtext" id="camText">Point at the barcode on the tree tag</div>
+      <div class="camoff hidden" id="camOff">
+        <div id="camOffText">Tap to turn on the camera</div>
+        <button class="btn" id="camStart">Turn on camera</button>
+      </div>
+    </div>
+    <div class="or">or type the tree number</div>
+    <form class="typein" id="typeForm">
+      <input id="typed" type="tel" inputmode="numeric" pattern="[0-9]*" placeholder="927751" autocomplete="off" maxlength="12">
+      <button class="btn btn-green" type="submit">Look up</button>
+    </form>
+    <div class="foot">
+      <span id="whoami"></span>
+      <button id="changeMe" type="button">Not you?</button>
+    </div>
+  </section>
+</div>
+
+<!-- Result sheet -->
+<div id="sheet"><div class="panel" id="panel"></div></div>
+
+<script>
+/* ============ Settings ============ */
+// Paste the Google Apps Script web app link between the quotes after setup.
+const BACKEND_URL = "https://script.google.com/macros/s/AKfycbwqYlDqC_Z4Fe_R1_y-hTuoS8H7ypiPaCdBgkX9cdWhZt7MHhTaEyOA-qfYp80vID9rvA/exec";
+/* ================================== */
+
+const DEMO = !BACKEND_URL || new URLSearchParams(location.search).has("demo");
+const $ = id => document.getElementById(id);
+const store = {
+  get(k){ try { return localStorage.getItem("pwp_"+k) || ""; } catch(e){ return mem[k] || ""; } },
+  set(k,v){ try { localStorage.setItem("pwp_"+k, v); } catch(e){ mem[k] = v; } },
+  del(k){ try { localStorage.removeItem("pwp_"+k); } catch(e){ delete mem[k]; } }
+};
+const mem = {};
+let scanner = null, scanning = false, busy = false, lastCode = "", lastAt = 0, undoTimer = null;
+
+/* ---------- Talking to the back end ---------- */
+async function call(action, data = {}) {
+  const body = { action, pin: store.get("pin"), helper: store.get("helper"), ...data };
+  if (DEMO) return demo(body);
+  const res = await fetch(BACKEND_URL, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain;charset=utf-8" }, // keeps it a simple request for Google
+    body: JSON.stringify(body)
+  });
+  if (!res.ok) throw new Error("The farm server did not answer (" + res.status + ").");
+  return res.json();
+}
+
+/* ---------- Demo data so the page can be tried before setup ---------- */
+const demoDb = {
+  "100001": { customer: "The Miller family", order: "#9001", tree_info: { label: "6 ft Concolor · South field, row 12" }, state: "ready", other_trees: 0, note: "" },
+  "100002": { customer: "Sam Porter", order: "#9002", tree_info: { label: "7 ft Canaan · North field, row 4" }, state: "ready", other_trees: 1, note: "Coming Saturday with a trailer" },
+  "100003": { customer: "Jo Hansen", order: "#9003", tree_info: { label: "8 ft Douglas · East field, row 2" }, state: "picked_up", at: new Date(Date.now() - 36e5).toISOString(), helper: "Sara" },
+  "100004": { tree_info: { label: "7 ft Canaan · North field, row 9" }, state: "free", price: "92.00" }
+};
+let demoToday = 0, demoSold = 7;
+async function demo(b) {
+  await new Promise(r => setTimeout(r, 450));
+  if (b.action === "hello") return b.pin ? { ok: true, today: demoToday, sold: demoSold } : { ok: false, error: "pin", message: "That farm PIN did not work." };
+  const t = demoDb[b.tree];
+  if (b.action === "lookup") {
+    if (!t) return { ok: true, status: "not_found", tree: b.tree };
+    if (t.state === "free") return { ok: true, status: "not_pretagged", tree: b.tree, tree_info: t.tree_info, price: t.price, in_stock: true };
+    if (t.state === "picked_up") return { ok: true, status: "picked_up", tree: b.tree, customer: t.customer, order: t.order, tree_info: t.tree_info, picked_up_at: t.at, logged: { at: t.at, helper: t.helper } };
+    return { ok: true, status: "ready", tree: b.tree, customer: t.customer, order: t.order, tree_info: t.tree_info, paid: "PAID", other_trees: t.other_trees, note: t.note };
+  }
+  if (b.action === "pickup") {
+    t.state = "picked_up"; t.at = new Date().toISOString(); t.helper = b.helper; demoToday++;
+    return { ok: true, status: "done", tree: b.tree, customer: t.customer, order: t.order, tree_info: t.tree_info, fulfillment_id: "demo-" + b.tree, today: demoToday, sold: demoSold };
+  }
+  if (b.action === "undo") {
+    const k = b.fulfillmentId.replace("demo-", ""); demoDb[k].state = "ready"; demoToday--;
+    return { ok: true, status: "undone", today: demoToday, sold: demoSold };
+  }
+}
+
+/* ---------- Screens ---------- */
+function showSetup(msg) {
+  stopCam();
+  $("scan").classList.add("hidden");
+  $("setup").classList.remove("hidden");
+  $("helper").value = store.get("helper");
+  $("pin").value = "";
+  $("setupErr").textContent = msg || "";
+}
+async function showScan() {
+  $("setup").classList.add("hidden");
+  $("scan").classList.remove("hidden");
+  $("whoami").textContent = "Scanning as " + store.get("helper");
+  startCam();
+}
+function setToday(r) {
+  if (!r || typeof r.today !== "number") return;
+  $("today").textContent = r.today;
+  if (typeof r.sold === "number") $("sold").textContent = r.sold;
+  $("todayChip").classList.remove("hidden");
+}
+
+$("saveSetup").onclick = async () => {
+  const helper = $("helper").value.trim(), pin = $("pin").value.trim();
+  if (!helper) return $("setupErr").textContent = "Add your first name so the log shows who handed it off.";
+  if (!pin) return $("setupErr").textContent = "Enter the farm PIN.";
+  $("saveSetup").disabled = true; $("setupErr").textContent = "";
+  store.set("helper", helper); store.set("pin", pin);
+  try {
+    const r = await call("hello");
+    if (!r.ok) { store.del("pin"); $("setupErr").textContent = r.message || "That PIN did not work."; }
+    else { setToday(r); showScan(); }
+  } catch (e) { $("setupErr").textContent = e.message; }
+  $("saveSetup").disabled = false;
+};
+$("changeMe").onclick = () => { store.del("pin"); showSetup(); };
+
+/* ---------- Camera ---------- */
+async function startCam() {
+  if (!window.Html5Qrcode) { camProblem("The scanner did not load. Type the tree number below."); return; }
+  if (scanner && scanning) return;
+  try {
+    if (!scanner) {
+      const F = Html5QrcodeSupportedFormats;
+      scanner = new Html5Qrcode("reader", {
+        verbose: false,
+        formatsToSupport: [F.CODE_128, F.CODE_39, F.CODE_93, F.EAN_13, F.EAN_8, F.UPC_A, F.UPC_E, F.ITF, F.CODABAR, F.QR_CODE],
+        experimentalFeatures: { useBarCodeDetectorIfSupported: true }
+      });
+    }
+    await scanner.start(
+      { facingMode: "environment" },
+      { fps: 12, qrbox: (w, h) => ({ width: Math.floor(w * 0.84), height: Math.floor(h * 0.36) }), aspectRatio: 4 / 3, disableFlip: true },
+      onScan, () => {}
+    );
+    scanning = true;
+    $("camOff").classList.add("hidden");
+    $("aim").classList.remove("hidden"); $("camText").classList.remove("hidden");
+  } catch (e) {
+    const denied = /permission|notallowed|denied/i.test(String(e && (e.name || e.message || e)));
+    camProblem(denied
+      ? "Camera is blocked. Allow the camera for this site in your browser settings, or type the number below."
+      : "Tap to turn on the camera");
+  }
+}
+function camProblem(text) {
+  scanning = false;
+  $("camOffText").textContent = text;
+  $("camOff").classList.remove("hidden");
+  $("aim").classList.add("hidden"); $("camText").classList.add("hidden");
+}
+async function stopCam() { if (scanner && scanning) { try { await scanner.stop(); } catch (e) {} scanning = false; } }
+$("camStart").onclick = startCam;
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) stopCam();
+  else if (!$("scan").classList.contains("hidden") && !$("sheet").classList.contains("on")) startCam();
+});
+
+function onScan(text) {
+  const code = String(text).replace(/\D/g, "");
+  if (!code || busy || $("sheet").classList.contains("on")) return;
+  const now = Date.now();
+  if (code === lastCode && now - lastAt < 4000) return;
+  lastCode = code; lastAt = now;
+  if (navigator.vibrate) navigator.vibrate(60);
+  lookup(code);
+}
+$("typeForm").onsubmit = e => {
+  e.preventDefault();
+  const code = $("typed").value.replace(/\D/g, "");
+  if (code) { $("typed").blur(); lookup(code); }
+};
+
+/* ---------- Result sheet ---------- */
+function openSheet(html) { $("panel").innerHTML = html; $("sheet").classList.add("on"); }
+function closeSheet() {
+  clearTimeout(undoTimer);
+  $("sheet").classList.remove("on");
+  $("typed").value = "";
+  lastAt = Date.now(); // short pause so the same tag is not read again instantly
+  if (scanner && scanning && scanner.resume) { try { scanner.resume(); } catch (e) {} }
+}
+$("sheet").addEventListener("click", e => { if (e.target.id === "sheet" && !busy) closeSheet(); });
+
+const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const money = p => p ? "$" + Math.round(Number(p)) : "";
+function when(iso) {
+  if (!iso) return "";
+  const d = new Date(iso), now = new Date();
+  const time = d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  if (d.toDateString() === now.toDateString()) return "today at " + time;
+  return d.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" }) + " at " + time;
+}
+function treeBox(r) {
+  return `<div class="treebox"><div class="num">${esc(r.tree)}</div><div class="what">${esc(r.tree_info && r.tree_info.label)}</div></div>`;
+}
+function pause() { if (scanner && scanning && scanner.pause) { try { scanner.pause(true); } catch (e) {} } }
+
+async function lookup(tree) {
+  busy = true; pause();
+  openSheet(`<div class="spin"></div><p class="meta" style="text-align:center">Looking up tree ${esc(tree)}</p>`);
+  try {
+    const r = await call("lookup", { tree });
+    if (!r.ok) return problem(r);
+    render(r);
+  } catch (e) { problem({ message: e.message }); }
+  finally { busy = false; }
+}
+
+function render(r) {
+  if (r.status === "ready") {
+    const extra = r.other_trees ? `<div class="note">This order has ${r.other_trees} more tree${r.other_trees > 1 ? "s" : ""}. Scan each tag separately.</div>` : "";
+    const unpaid = r.paid && !/PAID/.test(r.paid) ? `<div class="note">Shopify shows this order as ${esc(r.paid.toLowerCase().replace(/_/g, " "))}. Check before it goes home.</div>` : "";
+    const note = r.note ? `<div class="note">Note: ${esc(r.note)}</div>` : "";
+    openSheet(`
+      <span class="tag go">Pre-tagged</span>
+      <div class="who">${esc(r.customer)}</div>
+      <div class="meta">Order ${esc(r.order)}</div>
+      ${treeBox(r)}${note}${unpaid}${extra}
+      <button class="btn btn-green btn-big" id="go">Picked up</button>
+      <button class="btn btn-plain" id="cancel">Not yet</button>`);
+    $("go").onclick = () => pickup(r.tree);
+    $("cancel").onclick = closeSheet;
+  } else if (r.status === "picked_up") {
+    const by = r.logged && r.logged.helper ? ` by ${esc(r.logged.helper)}` : "";
+    const at = (r.logged && r.logged.at) || r.picked_up_at;
+    openSheet(`
+      <span class="tag warn">Already picked up</span>
+      <div class="who">${esc(r.customer)}</div>
+      <div class="meta">Order ${esc(r.order)}${at ? ` &middot; marked ${esc(when(at))}${by}` : ""}</div>
+      ${treeBox(r)}
+      <div class="note">If this family is here for it now, it may have been marked by mistake. Send them to the register to sort it out.</div>
+      <button class="btn btn-green" id="ok">Scan next</button>`);
+    $("ok").onclick = closeSheet;
+  } else if (r.status === "not_pretagged") {
+    const msg = r.in_stock === false
+      ? "Shopify shows this tree as already sold, but not as a pre-tag. Check with Becca."
+      : `Not a pre-tag. Ring it up at the register${r.price ? `: <b>${money(r.price)}</b>` : ""}.`;
+    openSheet(`
+      <span class="tag stop">Not pre-tagged</span>
+      <div class="who">Tree ${esc(r.tree)}</div>
+      ${treeBox(r)}
+      <p class="meta" style="margin-top:14px">${msg}</p>
+      <button class="btn btn-green" id="ok">Scan next</button>`);
+    $("ok").onclick = closeSheet;
+  } else {
+    openSheet(`
+      <span class="tag stop">Not found</span>
+      <div class="who">No tree ${esc(r.tree)}</div>
+      <p class="meta">Check the number on the tag and try again, or type it in.</p>
+      <button class="btn btn-green" id="ok">Try again</button>`);
+    $("ok").onclick = closeSheet;
+  }
+}
+
+function problem(r) {
+  if (r.error === "pin") { $("sheet").classList.remove("on"); store.del("pin"); showSetup(r.message); return; }
+  openSheet(`
+    <span class="tag stop">Hmm</span>
+    <div class="who" style="font-size:24px">That didn't go through</div>
+    <p class="meta">${esc(r.message || "Try again in a moment.")}</p>
+    <p class="meta" style="margin-top:8px">If it keeps happening, write the tree number down and mark it later.</p>
+    <button class="btn btn-green" id="ok">OK</button>`);
+  $("ok").onclick = closeSheet;
+}
+
+async function pickup(tree) {
+  if (busy) return;
+  busy = true;
+  $("go").disabled = true; $("go").textContent = "Saving...";
+  try {
+    const r = await call("pickup", { tree });
+    if (!r.ok) return problem(r);
+    if (r.already) return render(r);
+    setToday(r);
+    openSheet(`
+      <div class="check"><svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
+      <div class="who">Picked up</div>
+      <div class="meta">${esc(r.customer)} &middot; Order ${esc(r.order)}</div>
+      ${treeBox(r)}
+      <button class="btn btn-green btn-big" id="next">Scan next</button>
+      <button class="btn btn-plain" id="undo">Oops, undo</button>`);
+    $("next").onclick = closeSheet;
+    $("undo").onclick = () => undo(r.fulfillment_id, tree);
+    undoTimer = setTimeout(() => { const u = $("undo"); if (u) u.classList.add("hidden"); }, 60000);
+  } catch (e) { problem({ message: e.message }); }
+  finally { busy = false; }
+}
+
+async function undo(fulfillmentId, tree) {
+  if (busy) return;
+  busy = true;
+  $("undo").disabled = true; $("undo").textContent = "Undoing...";
+  try {
+    const r = await call("undo", { fulfillmentId, tree });
+    if (!r.ok) return problem(r);
+    setToday(r);
+    busy = false;
+    lookup(tree);
+  } catch (e) { problem({ message: e.message }); }
+  finally { busy = false; }
+}
+
+/* ---------- Start ---------- */
+if (DEMO) $("demoNote").classList.remove("hidden");
+if (store.get("helper") && store.get("pin")) {
+  showScan();
+  call("hello").then(r => { if (r.ok) setToday(r); else if (r.error === "pin") showSetup(r.message); }).catch(() => {});
+} else showSetup();
+// Refresh the counts every 2 minutes while the page is open
+setInterval(() => {
+  if (document.hidden || !store.get("pin") || busy) return;
+  call("hello").then(r => { if (r.ok) setToday(r); }).catch(() => {});
+}, 120000);
+</script>
+</body>
+</html>
