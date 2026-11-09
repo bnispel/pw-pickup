@@ -321,8 +321,8 @@ function render(r) {
     const note = r.note ? `<div class="note">Note: ${esc(r.note)}</div>` : "";
     openSheet(`
       <span class="tag go">Pre-tagged</span>
-      <div class="who">${esc(r.customer)}</div>
-      <div class="meta">Order ${esc(r.order)}</div>
+      <div class="who">${esc(r.customer || "Order " + r.order)}</div>
+      <div class="meta">${r.customer ? "Order " + esc(r.order) : "No name on this order. Check the note."}</div>
       ${treeBox(r)}${note}${unpaid}${extra}
       <button class="btn btn-green btn-big" id="go">Picked up</button>
       <button class="btn btn-plain" id="cancel">Not yet</button>`);
@@ -333,8 +333,8 @@ function render(r) {
     const at = (r.logged && r.logged.at) || r.picked_up_at;
     openSheet(`
       <span class="tag warn">Already picked up</span>
-      <div class="who">${esc(r.customer)}</div>
-      <div class="meta">Order ${esc(r.order)}${at ? ` &middot; marked ${esc(when(at))}${by}` : ""}</div>
+      <div class="who">${esc(r.customer || "Order " + r.order)}</div>
+      <div class="meta">${r.customer ? "Order " + esc(r.order) : "No name on this order"}${at ? ` &middot; marked ${esc(when(at))}${by}` : ""}</div>
       ${treeBox(r)}
       <div class="note">If this family is here for it now, it may have been marked by mistake. Send them to the register to sort it out.</div>
       <button class="btn btn-green" id="ok">Scan next</button>`);
@@ -383,7 +383,7 @@ async function pickup(tree) {
     openSheet(`
       <div class="check"><svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
       <div class="who">Picked up</div>
-      <div class="meta">${esc(r.customer)} &middot; Order ${esc(r.order)}</div>
+      <div class="meta">${r.customer ? esc(r.customer) + " &middot; " : ""}Order ${esc(r.order)}</div>
       ${treeBox(r)}
       <button class="btn btn-green btn-big" id="next">Scan next</button>
       <button class="btn btn-plain" id="undo">Oops, undo</button>`);
